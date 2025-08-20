@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Issue Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+        .header {
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-weight: 700;
+        }
+        .header p {
+            color: #6c757d;
+        }
+        .search-bar {
+            margin-bottom: 2rem;
+        }
+        .nav-tabs .nav-link {
+            color: #6c757d;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
+        .dashboard-cards .card {
+            border: none;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .card.total-active { background-color: #6c757d; }
+        .card.new-complaint { background-color: #0d6efd; }
+        .card.under-inspection { background-color: #ffc107; }
+        .card.sent-to-service { background-color: #fd7e14; }
+        .card.received { background-color: #dc3545; }
+
+        .dashboard-cards .card-body {
+            padding: 1.5rem;
+        }
+        .dashboard-cards .card-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .dashboard-cards .card-text {
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        .form-section, .active-requests-section {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        .form-section h3, .active-requests-section h3 {
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .no-requests {
+            text-align: center;
+            padding: 2rem;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+        .record-audio-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .floating-actions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .floating-actions .btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .service-request-card {
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .service-request-card .card-header {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        .service-request-card .card-body {
+            padding: 1.5rem;
+        }
+        .service-request-card .status-updater {
+            padding: 0.5rem 1rem;
+            background-color: #f1f3f5;
+            border-top: 1px solid #dee2e6;
+        }
+        .service-request-card .card-actions {
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comments-section {
+            padding: 1rem;
+            background-color: #e9ecef;
+        }
+        .dashboard-cards .card.clickable-card {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .dashboard-cards .card.clickable-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>Service Issue Tracker</h1>
+            <p>Manage and track product service requests efficiently.</p>
+        </div>
+
+        <div class="search-bar">
+            <label for="searchInput" class="form-label">Search All Requests</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Enter Customer Contact or Token #">
+                <button class="btn btn-outline-secondary" type="button">Clear</button>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-content" type="button" role="tab" aria-controls="dashboard-content" aria-selected="true">Dashboard & Active</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-content" type="button" role="tab" aria-controls="completed-content" aria-selected="false">Completed Installations</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="dashboard-content" role="tabpanel" aria-labelledby="dashboard-tab">
+                
+                <div class="dashboard my-4">
+                    <h3>Dashboard</h3>
+                    <div class="row dashboard-cards">
+                        <div class="col">
+                            <div class="card total-active clickable-card" data-status-filter="all">
+                                <div class="card-body">
+                                    <h5 class="card-title">0</h5>
+                                    <p class="card-text">Total Active</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card new-complaint clickable-card" data-status-filter="New Complaint">
+                                <div class="card-body">
+                                    <h5 class="card-title">0</h5>
+                                    <p class="card-text">New Complaint</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card under-inspection clickable-card" data-status-filter="Under Inspection">
+                                <div class="card-body">
+                                    <h5 class="card-title">0</h5>
+                                    <p class="card-text">Under Inspection</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card sent-to-service clickable-card" data-status-filter="Sent to Service Center">
+                                <div class="card-body">
+                                    <h5 class="card-title">0</h5>
+                                    <p class="card-text">Sent to Service Center</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card received clickable-card" data-status-filter="Received">
+                                <div class="card-body">
+                                    <h5 class="card-title">0</h5>
+                                    <p class="card-text">Received</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Create New Service Request</h3>
+                    <form id="request-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="productName" class="form-label">Product Name / Model</label>
+                                <input type="text" class="form-control" id="productName">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="serialNumber" class="form-label">Serial Number</label>
+                                <input type="text" class="form-control" id="serialNumber">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="customerName" class="form-label">Customer Name</label>
+                                <input type="text" class="form-control" id="customerName">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="customerContact" class="form-label">Customer Contact (Phone/Email)</label>
+                                <input type="text" class="form-control" id="customerContact">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="issueDescription" class="form-label">Detailed description of the issue...</label>
+                            <textarea class="form-control" id="issueDescription" rows="4"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="attachments" class="form-label">Attachments</label>
+                            <div class="d-flex align-items-center">
+                                <input class="form-control me-3" type="file" id="attachments">
+                                <button type="button" class="btn record-audio-btn"><i class="bi bi-mic-fill"></i> Record Audio</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </form>
+                </div>
+
+                <div class="active-requests-section">
+                    <h3>Active Service Requests</h3>
+                    <div id="requests-list">
+                        <!-- Service requests will be dynamically inserted here -->
+                    </div>
+                    <div id="no-requests" class="no-requests" style="display: none;">
+                        <p>No active service requests found.</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="tab-pane fade" id="completed-content" role="tabpanel" aria-labelledby="completed-tab">
+                <div class="p-4">
+                    <h2>Completed Installations</h2>
+                    <div id="completed-requests-list">
+                        <!-- Completed requests will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-actions">
+        <button class="btn btn-dark"><i class="bi bi-three-dots-vertical"></i></button>
+    </div>
+
+    <!-- Edit Request Modal -->
+    <div class="modal fade" id="editRequestModal" tabindex="-1" aria-labelledby="editRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editRequestModalLabel">Edit Service Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-request-form">
+                        <input type="hidden" id="editRequestId">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editProductName" class="form-label">Product Name / Model</label>
+                                <input type="text" class="form-control" id="editProductName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editSerialNumber" class="form-label">Serial Number</label>
+                                <input type="text" class="form-control" id="editSerialNumber">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editCustomerName" class="form-label">Customer Name</label>
+                                <input type="text" class="form-control" id="editCustomerName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editCustomerContact" class="form-label">Customer Contact</label>
+                                <input type="text" class="form-control" id="editCustomerContact" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editIssueDescription" class="form-label">Detailed description of the issue</label>
+                            <textarea class="form-control" id="editIssueDescription" rows="4" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="save-edit-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const API_URL = '/api/requests';
+
+            const form = document.getElementById('request-form');
+            const requestsList = document.getElementById('requests-list');
+            const completedRequestsList = document.getElementById('completed-requests-list');
+            const noRequestsMessage = document.getElementById('no-requests');
+            
+            // Dashboard card selectors
+            const totalActiveCard = document.querySelector('.card.total-active .card-title');
+            const newComplaintCard = document.querySelector('.card.new-complaint .card-title');
+            const underInspectionCard = document.querySelector('.card.under-inspection .card-title');
+            const sentToServiceCard = document.querySelector('.card.sent-to-service .card-title');
+            const receivedCard = document.querySelector('.card.received .card-title');
+            const completedCard = document.querySelector('#completed-content h2');
+            const dashboardCards = document.querySelector('.dashboard-cards');
+
+            // Edit Modal
+            const editModal = new bootstrap.Modal(document.getElementById('editRequestModal'));
+            const editForm = document.getElementById('edit-request-form');
+            const saveEditBtn = document.getElementById('save-edit-btn');
+
+
+            // --- Core Functions ---
+
+            /**
+             * Fetches all service requests from the backend API.
+             */
+            const fetchRequests = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) {
+                        throw new Error(`Network response was not ok (status: ${response.status})`);
+                    }
+                    const requests = await response.json();
+                    renderUI(requests);
+                } catch (error) {
+                    console.error('Failed to fetch requests:', error);
+                    requestsList.innerHTML = '<div class="alert alert-danger">Failed to load service requests. Please ensure the backend server is running and accessible.</div>';
+                }
+            };
+
+            /**
+             * Renders the entire UI, including request lists and dashboard counts.
+             * @param {Array} requests - The array of service request objects.
+             */
+            const renderUI = (requests) => {
+                // Clear existing content
+                requestsList.innerHTML = '';
+                completedRequestsList.innerHTML = '';
+
+                const activeRequests = requests.filter(r => r.status !== 'Completed Installations');
+                const completedRequests = requests.filter(r => r.status === 'Completed Installations');
+
+                // Render active requests
+                if (activeRequests.length === 0) {
+                    noRequestsMessage.style.display = 'block';
+                } else {
+                    noRequestsMessage.style.display = 'none';
+                    activeRequests.forEach(request => {
+                        requestsList.appendChild(createRequestCard(request));
+                    });
+                }
+
+                // Render completed requests
+                if (completedRequests.length > 0) {
+                    completedRequests.forEach(request => {
+                        completedRequestsList.appendChild(createRequestCard(request, true));
+                    });
+                }
+                
+                updateDashboard(requests);
+            };
+
+            /**
+             * Updates the dashboard statistics based on the current requests.
+             * @param {Array} requests - The array of all service request objects.
+             */
+            const updateDashboard = (requests) => {
+                const activeRequests = requests.filter(r => r.status !== 'Completed Installations');
+                
+                totalActiveCard.textContent = activeRequests.length;
+                newComplaintCard.textContent = activeRequests.filter(r => r.status === 'New Complaint').length;
+                underInspectionCard.textContent = activeRequests.filter(r => r.status === 'Under Inspection').length;
+                sentToServiceCard.textContent = activeRequests.filter(r => r.status === 'Sent to Service Center').length;
+                receivedCard.textContent = activeRequests.filter(r => r.status === 'Received').length;
+                completedCard.textContent = `Completed Installations (${requests.filter(r => r.status === 'Completed Installations').length})`;
+            };
+
+            /**
+             * Creates an HTML card element for a single service request.
+             * @param {object} request - The service request object.
+             * @param {boolean} isCompleted - Flag to determine if the card is for a completed request.
+             * @returns {HTMLElement} - The div element representing the request card.
+             */
+            const createRequestCard = (request, isCompleted = false) => {
+                const card = document.createElement('div');
+                card.className = 'service-request-card';
+                card.setAttribute('data-request-id', request.id);
+                // Store all request data on the element for easy access
+                card.dataset.request = JSON.stringify(request);
+
+
+                const statusOptions = `
+                    <option value="New Complaint" ${request.status === 'New Complaint' ? 'selected' : ''}>New Complaint</option>
+                    <option value="Under Inspection" ${request.status === 'Under Inspection' ? 'selected' : ''}>Under Inspection</option>
+                    <option value="Sent to Service Center" ${request.status === 'Sent to Service Center' ? 'selected' : ''}>Sent to Service Center</option>
+                    <option value="Received" ${request.status === 'Received' ? 'selected' : ''}>Received</option>
+                    <option value="Completed Installations" ${request.status === 'Completed Installations' ? 'selected' : ''}>Completed Installations</option>
+                `;
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <strong>${request.product_name}</strong> (S/N: ${request.serial_number || 'N/A'})
+                        <small class="text-muted float-end">Created: ${new Date(request.created_at).toLocaleString()}</small>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Customer:</strong> ${request.customer_name} (${request.customer_contact})</p>
+                        <p class="mb-0"><strong>Issue:</strong> ${request.issue_description}</p>
+                    </div>
+                    <div class="card-actions">
+                         <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary edit-btn">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#comments-${request.id}" aria-expanded="false">
+                                <i class="bi bi-chat-dots"></i> Comments
+                            </button>
+                        </div>
+                        ${!isCompleted ? `
+                        <div class="input-group input-group-sm" style="max-width: 250px;">
+                            <select class="form-select status-select" aria-label="Update Status">
+                                ${statusOptions}
+                            </select>
+                            <button class="btn btn-outline-primary update-status-btn">Update</button>
+                        </div>` : `
+                        <div class="text-success">
+                            <strong>Status:</strong> Completed
+                        </div>
+                        `}
+                    </div>
+                    <div class="collapse" id="comments-${request.id}">
+                        <div class="comments-section p-3">
+                            <div class="comment-list mb-3" id="comment-list-${request.id}">
+                                <!-- Comments will be loaded here -->
+                                <p class="text-muted text-center">Loading comments...</p>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control comment-input" placeholder="Add a comment...">
+                                <button class="btn btn-primary btn-sm post-comment-btn" data-request-id="${request.id}">Post</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return card;
+            };
+
+            /**
+             * Handles the form submission to create a new service request.
+             * @param {Event} e - The form submission event.
+             */
+            const handleFormSubmit = async (e) => {
+                e.preventDefault();
+                
+                const requestData = {
+                    productName: document.getElementById('productName').value,
+                    serialNumber: document.getElementById('serialNumber').value,
+                    customerName: document.getElementById('customerName').value,
+                    customerContact: document.getElementById('customerContact').value,
+                    issueDescription: document.getElementById('issueDescription').value,
+                };
+
+                // Basic validation
+                if (!requestData.productName || !requestData.customerName || !requestData.issueDescription) {
+                    alert('Please fill out Product Name, Customer Name, and Issue Description.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestData),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Failed to submit request: ${errorText}`);
+                    }
+
+                    form.reset();
+                    fetchRequests(); // Refresh the list
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                    alert(`Failed to submit the service request: ${error.message}`);
+                }
+            };
+
+            /**
+             * Handles updating the status of a service request.
+             * @param {number} id - The ID of the service request to update.
+             * @param {string} newStatus - The new status value.
+             */
+            const updateStatus = async (id, newStatus) => {
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Server responded with an error');
+                    }
+                    
+                    console.log(`Status for request ${id} updated to ${newStatus}`);
+                    fetchRequests(); // Refresh the entire UI to reflect the change
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Failed to update status. Please try again.');
+                }
+            };
+
+            /**
+             * Fetches and displays comments for a specific request.
+             * @param {string} requestId - The ID of the request.
+             */
+            const fetchComments = async (requestId) => {
+                const commentsContainer = document.getElementById(`comment-list-${requestId}`);
+                if (!commentsContainer) return;
+                commentsContainer.innerHTML = '<p class="text-muted text-center">Loading comments...</p>';
+
+                try {
+                    const response = await fetch(`${API_URL}/${requestId}/comments`);
+                    if (!response.ok) throw new Error('Failed to fetch comments');
+                    
+                    const comments = await response.json();
+                    commentsContainer.innerHTML = ''; // Clear loading message
+                    
+                    if (comments.length === 0) {
+                        commentsContainer.innerHTML = '<p class="text-muted text-center small">No comments yet.</p>';
+                    } else {
+                        comments.forEach(comment => {
+                            const commentEl = document.createElement('div');
+                            commentEl.className = 'small border-bottom pb-2 mb-2';
+                            commentEl.innerHTML = `
+                                <p class="mb-0">${comment.comment_text}</p>
+                                <small class="text-muted">${new Date(comment.created_at).toLocaleString()}</small>
+                            `;
+                            commentsContainer.appendChild(commentEl);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error fetching comments:', error);
+                    commentsContainer.innerHTML = '<p class="text-danger text-center small">Could not load comments.</p>';
+                }
+            };
+
+            /**
+             * Handles posting a new comment.
+             * @param {string} requestId - The ID of the request.
+             * @param {HTMLInputElement} commentInput - The input element for the comment.
+             */
+            const handlePostComment = async (requestId, commentInput) => {
+                const commentText = commentInput.value.trim();
+                if (!commentText) {
+                    alert('Comment cannot be empty.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/${requestId}/comments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comment_text: commentText }),
+                    });
+
+                    if (!response.ok) throw new Error('Failed to post comment');
+
+                    commentInput.value = ''; // Clear input field
+                    fetchComments(requestId); // Refresh the comments list
+                } catch (error) {
+                    console.error('Error posting comment:', error);
+                    alert('Failed to post comment. Please try again.');
+                }
+            };
+
+            /**
+             * Populates the edit modal with the data from the selected request.
+             * @param {object} request - The request object to edit.
+             */
+            const openEditModal = (request) => {
+                document.getElementById('editRequestId').value = request.id;
+                document.getElementById('editProductName').value = request.product_name;
+                document.getElementById('editSerialNumber').value = request.serial_number;
+                document.getElementById('editCustomerName').value = request.customer_name;
+                document.getElementById('editCustomerContact').value = request.customer_contact;
+                document.getElementById('editIssueDescription').value = request.issue_description;
+                editModal.show();
+            };
+
+            /**
+             * Handles saving the edited request data.
+             */
+            const handleSaveEdit = async () => {
+                const id = document.getElementById('editRequestId').value;
+                const updatedData = {
+                    product_name: document.getElementById('editProductName').value,
+                    serial_number: document.getElementById('editSerialNumber').value,
+                    customer_name: document.getElementById('editCustomerName').value,
+                    customer_contact: document.getElementById('editCustomerContact').value,
+                    issue_description: document.getElementById('editIssueDescription').value,
+                };
+
+                try {
+                    const response = await fetch(`${API_URL}/full/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData),
+                    });
+
+                    if (!response.ok) throw new Error('Failed to save changes');
+
+                    editModal.hide();
+                    fetchRequests(); // Refresh the list
+                } catch (error) {
+                    console.error('Error saving edit:', error);
+                    alert('Failed to save changes. Please try again.');
+                }
+            };
+
+            /**
+             * Filters the displayed service requests based on the selected status.
+             * @param {string} statusFilter - The status to filter by, or 'all' to show all.
+             */
+            const filterRequestsByStatus = (statusFilter) => {
+                const allRequestCards = requestsList.querySelectorAll('.service-request-card');
+                allRequestCards.forEach(card => {
+                    const requestData = JSON.parse(card.dataset.request);
+                    if (statusFilter === 'all' || requestData.status === statusFilter) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            };
+
+
+            // --- Event Listeners ---
+
+            // Listen for form submission
+            form.addEventListener('submit', handleFormSubmit);
+
+            // Listen for clicks on dashboard cards
+            dashboardCards.addEventListener('click', (e) => {
+                const card = e.target.closest('.clickable-card');
+                if (card && card.dataset.statusFilter) {
+                    const status = card.dataset.statusFilter;
+                    filterRequestsByStatus(status);
+                }
+            });
+
+            // Event delegation for all request lists
+            [requestsList, completedRequestsList].forEach(list => {
+                list.addEventListener('click', (e) => {
+                    const target = e.target;
+
+                    // Handle status updates
+                    if (target.closest('.update-status-btn')) {
+                        const card = target.closest('.service-request-card');
+                        const requestId = card.dataset.requestId;
+                        const statusSelect = card.querySelector('.status-select');
+                        const newStatus = statusSelect.value;
+                        
+                        if (requestId && newStatus) {
+                            updateStatus(requestId, newStatus);
+                        }
+                    }
+
+                    // Handle edit button clicks
+                    if (target.closest('.edit-btn')) {
+                        const card = target.closest('.service-request-card');
+                        const requestData = JSON.parse(card.dataset.request);
+                        openEditModal(requestData);
+                    }
+
+                    // Handle post comment button clicks
+                    if (target.classList.contains('post-comment-btn')) {
+                        const requestId = target.dataset.requestId;
+                        const commentInput = target.closest('.input-group').querySelector('.comment-input');
+                        if (requestId && commentInput) {
+                            handlePostComment(requestId, commentInput);
+                        }
+                    }
+                });
+
+                // Add listeners for when a comment section is shown
+                list.addEventListener('show.bs.collapse', (e) => {
+                    const commentsCollapseDiv = e.target;
+                    const card = commentsCollapseDiv.closest('.service-request-card');
+                    const requestId = card.dataset.requestId;
+                    if (requestId) {
+                        fetchComments(requestId);
+                    }
+                });
+            });
+            
+            // Listener for the save button in the modal
+            saveEditBtn.addEventListener('click', handleSaveEdit);
+
+
+            // Initial fetch of requests when the page loads
+            fetchRequests();
+        });
+    </script>
+</body>
+</html>
